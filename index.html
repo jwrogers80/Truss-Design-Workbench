@@ -1,0 +1,879 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1"><style>:root{color-scheme:light}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Balsa Truss Workbench</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@600;700&family=IBM+Plex+Sans:wght@400;500&display=swap">
+<style>
+:root{
+  --paper:#EFF1EC; --surface:#FAFBF8; --surface-2:#E4E7DF; --surface-3:#DADFD4;
+  --ink:#1A211C; --ink-2:#4E5A51; --ink-3:#7C887F;
+  --line:#C9D0C5; --line-2:#B2BCAE;
+  --accent:#0E5E58; --accent-soft:#D6E7E3;
+  --balsa:#D9C08C; --balsa-edge:#B99A63;
+  --tension:#1D5FA8; --compression:#C0532A;
+  --danger:#A3231B; --ok:#2F7D4F; --warn:#9A6B08;
+  --danger-bg:#F6DEDB; --ok-bg:#DDEEE3; --warn-bg:#F4E9CE;
+  --grid-minor:#D3DACE; --grid-major:#B6C0B3;
+  --shadow:0 1px 2px rgba(26,33,28,.07), 0 8px 24px -16px rgba(26,33,28,.25);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#0F1411; --surface:#19201B; --surface-2:#232B25; --surface-3:#2C352E;
+    --ink:#E7EDE6; --ink-2:#A5B2A6; --ink-3:#778377;
+    --line:#2F3931; --line-2:#3E4A40;
+    --accent:#5FD3C4; --accent-soft:#12302C;
+    --balsa:#C4A97A; --balsa-edge:#8D7748;
+    --tension:#6AA9E8; --compression:#E8834F;
+    --danger:#E8756A; --ok:#62C68B; --warn:#DCAB3E;
+    --danger-bg:#331B18; --ok-bg:#16301F; --warn-bg:#332A14;
+    --grid-minor:#222B24; --grid-major:#333E35;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -16px rgba(0,0,0,.8);
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#0F1411; --surface:#19201B; --surface-2:#232B25; --surface-3:#2C352E;
+  --ink:#E7EDE6; --ink-2:#A5B2A6; --ink-3:#778377;
+  --line:#2F3931; --line-2:#3E4A40;
+  --accent:#5FD3C4; --accent-soft:#12302C;
+  --balsa:#C4A97A; --balsa-edge:#8D7748;
+  --tension:#6AA9E8; --compression:#E8834F;
+  --danger:#E8756A; --ok:#62C68B; --warn:#DCAB3E;
+  --danger-bg:#331B18; --ok-bg:#16301F; --warn-bg:#332A14;
+  --grid-minor:#222B24; --grid-major:#333E35;
+  --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -16px rgba(0,0,0,.8);
+}
+
+*{box-sizing:border-box}
+body{
+  background:var(--paper); color:var(--ink);
+  font-family:"IBM Plex Sans",system-ui,-apple-system,Segoe UI,sans-serif;
+  font-size:15px; line-height:1.5;
+  padding-block:22px 40px; padding-left:20px; padding-right:20px;
+  max-width:1360px; margin:0 auto;
+}
+h1,h2,h3{font-family:"IBM Plex Sans Condensed","IBM Plex Sans",system-ui,sans-serif;font-weight:700;margin:0;text-wrap:balance;letter-spacing:.01em}
+.mono,td.num,.stat-v,.tag{font-family:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;font-variant-numeric:tabular-nums}
+
+/* ---------- header ---------- */
+header{display:flex;flex-wrap:wrap;gap:14px 26px;align-items:flex-end;justify-content:space-between;
+  border-bottom:1.5px solid var(--line-2);padding-bottom:14px;margin-bottom:20px}
+.brand h1{font-size:27px;line-height:1.1}
+.brand p{margin:4px 0 0;color:var(--ink-2);font-size:13.5px;max-width:56ch}
+.specs{display:flex;gap:0;flex-wrap:wrap;border:1px solid var(--line);border-radius:3px;overflow:hidden;background:var(--surface)}
+.spec{padding:7px 13px;border-right:1px solid var(--line)}
+.spec:last-child{border-right:0}
+.spec dt{font-family:"IBM Plex Sans Condensed",sans-serif;font-weight:600;font-size:10px;letter-spacing:.11em;text-transform:uppercase;color:var(--ink-3);margin:0}
+.spec dd{margin:1px 0 0;font-family:"IBM Plex Mono",monospace;font-size:13px;font-weight:500;font-variant-numeric:tabular-nums}
+
+/* ---------- layout ---------- */
+.board{display:grid;grid-template-columns:minmax(0,1fr) 352px;gap:20px;align-items:start}
+@media (max-width:980px){.board{grid-template-columns:minmax(0,1fr)}}
+
+/* ---------- drafting area ---------- */
+.drafting{background:var(--surface);border:1px solid var(--line);border-radius:4px;box-shadow:var(--shadow);overflow:hidden}
+.toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:10px 12px;border-bottom:1px solid var(--line);background:var(--surface-2)}
+.seg{display:flex;border:1px solid var(--line-2);border-radius:3px;overflow:hidden;background:var(--surface)}
+.seg button{border:0;border-right:1px solid var(--line-2);background:transparent;color:var(--ink-2);
+  font-family:"IBM Plex Sans Condensed",sans-serif;font-weight:600;font-size:12.5px;letter-spacing:.05em;text-transform:uppercase;
+  padding:7px 13px;cursor:pointer}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--surface)}
+button.act{border:1px solid var(--line-2);background:var(--surface);color:var(--ink-2);border-radius:3px;
+  font-family:"IBM Plex Sans Condensed",sans-serif;font-weight:600;font-size:12.5px;letter-spacing:.05em;text-transform:uppercase;padding:7px 12px;cursor:pointer}
+button.act:hover,.seg button:hover{background:var(--surface-3);color:var(--ink)}
+button:focus-visible,input:focus-visible,label.chk:focus-within{outline:2px solid var(--accent);outline-offset:2px}
+.tb-right{margin-left:auto;display:flex;gap:10px;align-items:center}
+label.chk{display:inline-flex;gap:6px;align-items:center;font-size:12.5px;color:var(--ink-2);cursor:pointer;user-select:none}
+label.chk input{accent-color:var(--accent);margin:0}
+.canvas-wrap{position:relative;background:var(--surface)}
+canvas{display:block;width:100%;height:auto;touch-action:none;cursor:crosshair}
+.hint{display:flex;flex-wrap:wrap;gap:6px 18px;padding:9px 12px;border-top:1px solid var(--line);
+  background:var(--surface-2);font-size:12.5px;color:var(--ink-2)}
+.hint b{font-weight:500;color:var(--ink)}
+.key{display:inline-flex;align-items:center;gap:6px}
+.swatch{width:16px;height:7px;border-radius:2px;display:inline-block}
+
+/* ---------- panel ---------- */
+.panel{display:flex;flex-direction:column;gap:14px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:4px;box-shadow:var(--shadow)}
+.card > h2{font-size:11px;letter-spacing:.13em;text-transform:uppercase;color:var(--ink-3);
+  padding:10px 14px;border-bottom:1px solid var(--line);font-weight:600}
+.card-body{padding:14px}
+
+.loadrow{display:flex;gap:10px;align-items:flex-end}
+.field{flex:1;min-width:0}
+.field label{display:block;font-family:"IBM Plex Sans Condensed",sans-serif;font-weight:600;font-size:10.5px;
+  letter-spacing:.11em;text-transform:uppercase;color:var(--ink-3);margin-bottom:5px}
+.field input{width:100%;font-family:"IBM Plex Mono",monospace;font-size:20px;font-weight:500;font-variant-numeric:tabular-nums;
+  padding:7px 10px;border:1px solid var(--line-2);border-radius:3px;background:var(--paper);color:var(--ink)}
+.at{font-size:12.5px;color:var(--ink-2);padding-bottom:9px;white-space:nowrap}
+
+.verdict{display:flex;align-items:center;gap:12px;padding:13px 14px;border-radius:3px;border:1px solid transparent}
+.verdict.ok{background:var(--ok-bg);border-color:color-mix(in srgb,var(--ok) 35%,transparent)}
+.verdict.bad{background:var(--danger-bg);border-color:color-mix(in srgb,var(--danger) 35%,transparent)}
+.verdict.idle{background:var(--surface-2);border-color:var(--line)}
+.verdict .big{font-family:"IBM Plex Sans Condensed",sans-serif;font-weight:700;font-size:21px;line-height:1.05}
+.verdict .sub{font-size:12.5px;color:var(--ink-2);margin-top:2px}
+.verdict.ok .big{color:var(--ok)} .verdict.bad .big{color:var(--danger)} .verdict.idle .big{color:var(--ink-2)}
+.fos{margin-left:auto;text-align:right;font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums}
+.fos b{display:block;font-size:22px;font-weight:600;line-height:1}
+.fos span{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3)}
+
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line);border-top:1px solid var(--line);margin-top:14px}
+.stat{background:var(--surface);padding:10px 14px}
+.stat dt{font-family:"IBM Plex Sans Condensed",sans-serif;font-weight:600;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);margin:0}
+.stat-v{display:block;font-size:17px;font-weight:500;margin-top:2px}
+.stat-v small{font-size:11.5px;color:var(--ink-3);font-weight:400;margin-left:3px}
+
+.issues{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:1px;background:var(--line)}
+.issues li{background:var(--surface);padding:9px 14px;font-size:13px;display:flex;gap:9px;align-items:flex-start;line-height:1.4}
+.issues li > span{min-width:0}
+.issues li::before{content:"";flex:none;width:3px;align-self:stretch;border-radius:2px;background:var(--warn);margin:1px 0}
+.issues li.err::before{background:var(--danger)}
+.issues li.good::before{background:var(--ok)}
+.issues b{font-weight:500}
+
+.tbl-scroll{max-height:390px;overflow:auto}
+table{width:100%;border-collapse:collapse;font-size:12px}
+thead th{position:sticky;top:0;background:var(--surface-2);text-align:left;font-family:"IBM Plex Sans Condensed",sans-serif;
+  font-weight:600;font-size:10px;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-3);
+  padding:7px 6px;border-bottom:1px solid var(--line-2);white-space:nowrap}
+tbody td{padding:6px 6px;border-bottom:1px solid var(--line);vertical-align:middle;white-space:nowrap}
+tbody tr:hover,tbody tr.hot{background:var(--accent-soft)}
+td.num{text-align:right;white-space:nowrap}
+.tag{display:inline-block;font-size:10px;font-weight:600;letter-spacing:.06em;padding:1px 5px;border-radius:2px;border:1px solid}
+.tag.T{color:var(--tension);border-color:color-mix(in srgb,var(--tension) 45%,transparent)}
+.tag.C{color:var(--compression);border-color:color-mix(in srgb,var(--compression) 45%,transparent)}
+.tag.Z{color:var(--ink-3);border-color:var(--line-2)}
+.bar{position:relative;display:block;height:5px;border-radius:3px;background:var(--surface-3);min-width:38px;overflow:hidden}
+.bar i{position:absolute;inset:0 auto 0 0;border-radius:3px;background:var(--ok)}
+.bar i.w{background:var(--warn)} .bar i.d{background:var(--danger)}
+.empty{padding:22px 14px;text-align:center;color:var(--ink-3);font-size:13px}
+
+footer{margin-top:22px;border-top:1px solid var(--line);padding-top:14px;font-size:12.5px;color:var(--ink-2)}
+footer h3{font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);margin-bottom:8px}
+.assump{display:grid;grid-template-columns:repeat(auto-fit,minmax(205px,1fr));gap:4px 22px;margin:0}
+.assump div{display:flex;justify-content:space-between;gap:10px;border-bottom:1px dotted var(--line-2);padding:3px 0}
+.assump dt{color:var(--ink-2)} .assump dd{margin:0;font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--ink)}
+footer p{margin:12px 0 0;max-width:78ch;color:var(--ink-3);font-size:12px}
+@media (prefers-reduced-motion:no-preference){.verdict,.bar i{transition:background-color .18s ease,width .25s ease}}
+</style>
+
+<header>
+  <div class="brand">
+    <h1>Balsa Truss Workbench</h1>
+    <p>Draw a plane truss on the quarter-inch grid, apply a point load at midspan, and read the axial force, capacity, and mass of every stick.</p>
+  </div>
+  <dl class="specs">
+    <div class="spec"><dt>Span</dt><dd>12.00 in</dd></div>
+    <div class="spec"><dt>Height</dt><dd>2.00 – 6.00 in</dd></div>
+    <div class="spec"><dt>Stock</dt><dd>0.25 in sq.</dd></div>
+    <div class="spec"><dt>Grid</dt><dd>0.25 in</dd></div>
+  </dl>
+</header>
+
+<main class="board">
+  <section class="drafting">
+    <div class="toolbar">
+      <div class="seg" role="group" aria-label="Tool">
+        <button id="tool-draw" type="button" aria-pressed="true">Draw</button>
+        <button id="tool-erase" type="button" aria-pressed="false">Erase</button>
+      </div>
+      <button class="act" id="btn-undo" type="button">Undo</button>
+      <button class="act" id="btn-clear" type="button">Clear</button>
+      <button class="act" id="btn-example" type="button">Load example</button>
+      <div class="tb-right">
+        <label class="chk"><input type="checkbox" id="opt-forces" checked> Force labels</label>
+      </div>
+    </div>
+    <div class="canvas-wrap"><canvas id="cv" aria-label="Truss drafting grid"></canvas></div>
+    <div class="hint">
+      <span><b>Click</b> two grid nodes to lay a member · <b>drag</b> also works</span>
+      <span class="key"><i class="swatch" style="background:var(--tension)"></i> tension</span>
+      <span class="key"><i class="swatch" style="background:var(--compression)"></i> compression</span>
+      <span class="key"><i class="swatch" style="background:var(--danger)"></i> overstressed</span>
+      <span class="key"><i class="swatch" style="background:var(--balsa)"></i> unloaded</span>
+    </div>
+  </section>
+
+  <aside class="panel">
+    <div class="card">
+      <h2>Load</h2>
+      <div class="card-body">
+        <div class="loadrow">
+          <div class="field">
+            <label for="load">Point load (lb)</label>
+            <input id="load" type="number" min="0" step="1" value="20" inputmode="decimal">
+          </div>
+          <div class="at" id="load-at">at top chord, x = 6.00 in</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Result</h2>
+      <div class="card-body" style="padding-bottom:0">
+        <div class="verdict idle" id="verdict">
+          <div>
+            <div class="big" id="verdict-t">Draw a truss</div>
+            <div class="sub" id="verdict-s">Connect both supports to begin.</div>
+          </div>
+          <div class="fos"><b id="fos">—</b><span>Factor of safety</span></div>
+        </div>
+      </div>
+      <dl class="stats" id="stats">
+        <div class="stat"><dt>Mass</dt><span class="stat-v" id="s-mass">—</span></div>
+        <div class="stat"><dt>Failure load</dt><span class="stat-v" id="s-fail">—</span></div>
+        <div class="stat"><dt>Peak tension</dt><span class="stat-v" id="s-ten">—</span></div>
+        <div class="stat"><dt>Peak compression</dt><span class="stat-v" id="s-com">—</span></div>
+        <div class="stat"><dt>Deflection at load</dt><span class="stat-v" id="s-def">—</span></div>
+        <div class="stat"><dt>Strength / weight</dt><span class="stat-v" id="s-eff">—</span></div>
+      </dl>
+    </div>
+
+    <div class="card" id="issues-card">
+      <h2>Checks</h2>
+      <ul class="issues" id="issues"></ul>
+    </div>
+
+    <div class="card">
+      <h2>Member forces</h2>
+      <div class="tbl-scroll">
+        <table>
+          <thead><tr><th>#</th><th class="num">L&nbsp;in</th><th class="num">Force&nbsp;lb</th><th></th><th class="num">Cap</th><th style="width:52px">Use</th><th>Mode</th></tr></thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </div>
+      <div class="empty" id="tbl-empty">No members drawn yet.</div>
+    </div>
+  </aside>
+</main>
+
+<footer>
+  <h3>Analysis assumptions</h3>
+  <dl class="assump">
+    <div><dt>Method</dt><dd>2-D direct stiffness</dd></div>
+    <div><dt>Joints</dt><dd>frictionless pins</dd></div>
+    <div><dt>Supports</dt><dd>pin at 0 in, roller at 12 in</dd></div>
+    <div><dt>Section area</dt><dd>0.0625 in²</dd></div>
+    <div><dt>Moment of inertia</dt><dd>3.255e-4 in⁴</dd></div>
+    <div><dt>Modulus E</dt><dd>500,000 psi</dd></div>
+    <div><dt>Tensile strength</dt><dd>2,000 psi</dd></div>
+    <div><dt>Crushing strength</dt><dd>1,000 psi</dd></div>
+    <div><dt>Buckling</dt><dd>Euler, K = 1.0</dd></div>
+    <div><dt>Density</dt><dd>8.0 lb/ft³</dd></div>
+  </dl>
+  <p>Self-weight is neglected — the applied load dominates. Joints are assumed as strong as the members, so failure is predicted in the sticks, not the glue. Balsa is a natural material: real strength and stiffness vary by a factor of two or more between sticks, so treat the factor of safety as a design comparison, not a guarantee.</p>
+</footer>
+
+<script>
+(function(){
+"use strict";
+
+/* ===================== constants ===================== */
+const SPAN=12, GRID=0.25, HMIN=2, HMAX=6;
+const B=0.25, AREA=B*B, I=Math.pow(B,4)/12;
+const E=500000, SIG_T=2000, SIG_C=1000, DENS=8/1728; // lb/in^3
+const P_TEN=SIG_T*AREA, P_CRUSH=SIG_C*AREA, EULER=Math.PI*Math.PI*E*I;
+const G_PER_LB=453.59237;
+
+const key=(x,y)=>x.toFixed(2)+","+y.toFixed(2);
+const r2=v=>Math.round(v/GRID)*GRID;
+const near=(a,b)=>Math.abs(a-b)<1e-6;
+
+/* ===================== model ===================== */
+// members: {a:{x,y}, b:{x,y}}
+let members=[];
+let history=[];
+let tool="draw";
+let pending=null;      // first clicked node
+let hoverNode=null, hoverMember=-1, dragFrom=null, dragTo=null;
+let result=null;
+let showForces=true;
+
+function snapshot(){ history.push(JSON.stringify(members)); if(history.length>80) history.shift(); }
+
+/* ---- keep the invariant: no member has an interior node that is another member's end ---- */
+function endpointSet(list){
+  const s=new Set();
+  for(const m of list){ s.add(key(m.a.x,m.a.y)); s.add(key(m.b.x,m.b.y)); }
+  return s;
+}
+function interiorNodes(m){
+  const dx=m.b.x-m.a.x, dy=m.b.y-m.a.y;
+  const steps=Math.round(Math.max(Math.abs(dx),Math.abs(dy))/GRID);
+  const g=gcd(Math.round(Math.abs(dx)/GRID),Math.round(Math.abs(dy)/GRID));
+  const out=[];
+  if(g<2) return out;
+  for(let k=1;k<g;k++) out.push({x:m.a.x+dx*k/g, y:m.a.y+dy*k/g});
+  return out;
+}
+function gcd(a,b){ a=Math.abs(a); b=Math.abs(b); while(b){ const t=a%b; a=b; b=t; } return a||1; }
+
+function normalize(list){
+  // split repeatedly until stable, then dedupe
+  let changed=true, guard=0;
+  while(changed && guard++<12){
+    changed=false;
+    const ends=endpointSet(list);
+    const next=[];
+    for(const m of list){
+      const cuts=interiorNodes(m).filter(p=>ends.has(key(p.x,p.y)));
+      if(cuts.length){
+        changed=true;
+        const pts=[m.a,...cuts,m.b];
+        for(let i=0;i<pts.length-1;i++) next.push({a:pts[i],b:pts[i+1]});
+      } else next.push(m);
+    }
+    list=next;
+  }
+  const seen=new Set(), out=[];
+  for(const m of list){
+    const k1=key(m.a.x,m.a.y), k2=key(m.b.x,m.b.y);
+    if(k1===k2) continue;
+    const id=k1<k2?k1+"|"+k2:k2+"|"+k1;
+    if(seen.has(id)) continue;
+    seen.add(id); out.push({a:{x:m.a.x,y:m.a.y},b:{x:m.b.x,y:m.b.y}});
+  }
+  out.sort((p,q)=> (p.a.x-q.a.x) || (p.a.y-q.a.y) || (p.b.x-q.b.x) || (p.b.y-q.b.y));
+  return out;
+}
+
+function addMember(a,b){
+  if(near(a.x,b.x)&&near(a.y,b.y)) return;
+  snapshot();
+  members=normalize(members.concat([{a:{x:a.x,y:a.y},b:{x:b.x,y:b.y}}]));
+  run();
+}
+function removeMember(i){
+  if(i<0||i>=members.length) return;
+  snapshot();
+  members=members.slice(0,i).concat(members.slice(i+1));
+  members=normalize(members);
+  run();
+}
+
+/* ===================== analysis ===================== */
+function len(m){ return Math.hypot(m.b.x-m.a.x, m.b.y-m.a.y); }
+
+function compCapacity(L){
+  const buck=EULER/(L*L);
+  return buck<P_CRUSH ? {cap:buck,mode:"buckling"} : {cap:P_CRUSH,mode:"crushing"};
+}
+
+function solve(P){
+  const issues=[];
+  const nodeIdx=new Map(), nodes=[];
+  for(const m of members){
+    for(const p of [m.a,m.b]){
+      const k=key(p.x,p.y);
+      if(!nodeIdx.has(k)){ nodeIdx.set(k,nodes.length); nodes.push({x:p.x,y:p.y,mem:[]}); }
+    }
+  }
+  members.forEach((m,i)=>{
+    const ia=nodeIdx.get(key(m.a.x,m.a.y)), ib=nodeIdx.get(key(m.b.x,m.b.y));
+    nodes[ia].mem.push(i); nodes[ib].mem.push(i);
+  });
+
+  const totalLen=members.reduce((s,m)=>s+len(m),0);
+  const massLb=totalLen*AREA*DENS;
+  const base={massLb, massG:massLb*G_PER_LB, totalLen, forces:null, issues};
+
+  if(!members.length){ issues.push({t:"Nothing drawn yet — click two grid nodes to lay your first member.",k:"warn"}); return base; }
+
+  const iA=nodeIdx.get(key(0,0)), iB=nodeIdx.get(key(SPAN,0));
+  if(iA===undefined||iB===undefined){
+    issues.push({t:"Both supports must be part of the truss: a member has to reach <b>(0.00, 0.00)</b> and <b>(12.00, 0.00)</b>.",k:"err"});
+    return base;
+  }
+
+  // connectivity
+  const seen=new Set([iA]); const stack=[iA];
+  while(stack.length){ const n=stack.pop();
+    for(const mi of nodes[n].mem){ const m=members[mi];
+      for(const k of [key(m.a.x,m.a.y),key(m.b.x,m.b.y)]){ const j=nodeIdx.get(k);
+        if(!seen.has(j)){ seen.add(j); stack.push(j); } } } }
+  if(seen.size!==nodes.length){
+    issues.push({t:"Some members are floating free of the main structure. Every stick must trace a path back to the supports.",k:"err"});
+    return base;
+  }
+
+  // height
+  const maxY=Math.max(...nodes.map(n=>n.y));
+  if(maxY<HMIN-1e-9) issues.push({t:`Truss is only <b>${maxY.toFixed(2)} in</b> tall. The rules require at least ${HMIN.toFixed(2)} in.`,k:"err"});
+  if(maxY>HMAX+1e-9) issues.push({t:`Truss is <b>${maxY.toFixed(2)} in</b> tall, over the ${HMAX.toFixed(2)} in limit.`,k:"err"});
+
+  // load node: highest node at midspan
+  const mid=SPAN/2;
+  let loadNode=-1, loadY=-1;
+  nodes.forEach((n,i)=>{ if(near(n.x,mid)&&n.y>loadY){ loadY=n.y; loadNode=i; } });
+  if(loadNode<0){
+    issues.push({t:"No joint at midspan. The load is applied at <b>x = 6.00 in</b>, so a node must exist there.",k:"err"});
+    return base;
+  }
+
+  // support / local stability
+  const fixed=new Set([2*iA,2*iA+1,2*iB+1]);
+  for(let i=0;i<nodes.length;i++){
+    const dirs=[];
+    for(const mi of nodes[i].mem){
+      const m=members[mi], L=len(m);
+      let c=(m.b.x-m.a.x)/L, s=(m.b.y-m.a.y)/L;
+      const isA=near(m.a.x,nodes[i].x)&&near(m.a.y,nodes[i].y);
+      if(!isA){ c=-c; s=-s; }
+      dirs.push([c,s]);
+    }
+    const fx=!fixed.has(2*i), fy=!fixed.has(2*i+1);
+    if(!fx&&!fy) continue;
+    let bad=false;
+    if(fx&&fy){
+      if(dirs.length<2) bad=true;
+      else{
+        let spread=false;
+        for(let a=1;a<dirs.length;a++) if(Math.abs(dirs[0][0]*dirs[a][1]-dirs[0][1]*dirs[a][0])>1e-9) spread=true;
+        if(!spread) bad=true;
+      }
+    } else if(fx && !dirs.some(d=>Math.abs(d[0])>1e-9)) bad=true;
+    else if(fy && !dirs.some(d=>Math.abs(d[1])>1e-9)) bad=true;
+    if(bad){
+      issues.push({t:`Joint at <b>(${nodes[i].x.toFixed(2)}, ${nodes[i].y.toFixed(2)})</b> can swing free — it needs at least two members pulling in different directions.`,k:"err",node:i});
+      return base;
+    }
+  }
+
+  if(issues.some(x=>x.k==="err")) return base;
+
+  // assemble
+  const n2=nodes.length*2;
+  const K=[]; for(let i=0;i<n2;i++) K.push(new Float64Array(n2));
+  members.forEach((m,mi)=>{
+    const L=len(m), c=(m.b.x-m.a.x)/L, s=(m.b.y-m.a.y)/L, k=E*AREA/L;
+    const ia=nodeIdx.get(key(m.a.x,m.a.y)), ib=nodeIdx.get(key(m.b.x,m.b.y));
+    const d=[2*ia,2*ia+1,2*ib,2*ib+1], T=[-c,-s,c,s];
+    for(let a=0;a<4;a++) for(let b2=0;b2<4;b2++) K[d[a]][d[b2]]+=k*T[a]*T[b2];
+  });
+  const F=new Float64Array(n2);
+  F[2*loadNode+1]-=P;
+
+  const free=[]; for(let i=0;i<n2;i++) if(!fixed.has(i)) free.push(i);
+  const nf=free.length;
+  const A=[]; let maxDiag=0;
+  for(let i=0;i<nf;i++){
+    const row=new Float64Array(nf+1);
+    for(let j=0;j<nf;j++) row[j]=K[free[i]][free[j]];
+    row[nf]=F[free[i]];
+    maxDiag=Math.max(maxDiag,Math.abs(row[i]));
+    A.push(row);
+  }
+  // Gaussian elimination, partial pivoting
+  for(let c=0;c<nf;c++){
+    let piv=c;
+    for(let r=c+1;r<nf;r++) if(Math.abs(A[r][c])>Math.abs(A[piv][c])) piv=r;
+    if(Math.abs(A[piv][c])<1e-7*maxDiag){
+      issues.push({t:"This shape is a <b>mechanism</b> — it folds instead of carrying load. Triangulate every panel.",k:"err"});
+      return base;
+    }
+    if(piv!==c){ const t=A[piv]; A[piv]=A[c]; A[c]=t; }
+    for(let r=c+1;r<nf;r++){
+      const f=A[r][c]/A[c][c]; if(!f) continue;
+      for(let j=c;j<=nf;j++) A[r][j]-=f*A[c][j];
+    }
+  }
+  const uf=new Float64Array(nf);
+  for(let r=nf-1;r>=0;r--){
+    let s=A[r][nf];
+    for(let j=r+1;j<nf;j++) s-=A[r][j]*uf[j];
+    uf[r]=s/A[r][r];
+  }
+  const u=new Float64Array(n2);
+  free.forEach((d,i)=>{ u[d]=uf[i]; });
+
+  const forces=members.map(m=>{
+    const L=len(m), c=(m.b.x-m.a.x)/L, s=(m.b.y-m.a.y)/L;
+    const ia=nodeIdx.get(key(m.a.x,m.a.y)), ib=nodeIdx.get(key(m.b.x,m.b.y));
+    const f=(E*AREA/L)*((u[2*ib]-u[2*ia])*c+(u[2*ib+1]-u[2*ia+1])*s);
+    let cap,mode;
+    if(f>1e-9){ cap=P_TEN; mode="tension"; }
+    else if(f<-1e-9){ const r=compCapacity(L); cap=r.cap; mode=r.mode; }
+    else { cap=P_TEN; mode="—"; }
+    return {L, f, cap, mode, util:Math.abs(f)/cap};
+  });
+
+  const maxUtil=Math.max(0,...forces.map(f=>f.util));
+  const crit=forces.findIndex(f=>f.util===maxUtil);
+  const defl=-u[2*loadNode+1];
+
+  return {
+    ...base, forces, maxUtil, crit, defl,
+    loadPt:{x:nodes[loadNode].x,y:nodes[loadNode].y},
+    height:maxY,
+    fos: maxUtil>0 ? 1/maxUtil : Infinity,
+    failLoad: maxUtil>0 ? P/maxUtil : Infinity,
+    maxT: Math.max(0,...forces.map(f=>f.f)),
+    maxC: Math.min(0,...forces.map(f=>f.f)),
+    issues
+  };
+}
+
+/* ===================== drawing ===================== */
+const cv=document.getElementById("cv"), ctx=cv.getContext("2d");
+const VX0=-0.95, VX1=14.35, VY0=-1.15, VY1=6.6;
+let S=40, OX=0, OY=0;
+const X=x=>OX+x*S, Y=y=>OY-y*S;
+
+function css(n){ return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
+
+function resize(){
+  const w=cv.parentElement.clientWidth||900;
+  const aspect=(VY1-VY0)/(VX1-VX0);
+  const h=Math.round(w*aspect);
+  const dpr=Math.min(window.devicePixelRatio||1,2);
+  cv.width=Math.round(w*dpr); cv.height=Math.round(h*dpr);
+  cv.style.height=h+"px";
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  S=w/(VX1-VX0); OX=-VX0*S; OY=VY1*S;
+  draw();
+}
+
+function draw(){
+  const C={paper:css("--surface"),minor:css("--grid-minor"),major:css("--grid-major"),ink:css("--ink"),
+    ink2:css("--ink-2"),ink3:css("--ink-3"),line:css("--line-2"),balsa:css("--balsa"),balsaE:css("--balsa-edge"),
+    ten:css("--tension"),com:css("--compression"),dang:css("--danger"),acc:css("--accent"),surf:css("--surface")};
+  const w=cv.clientWidth,h=cv.clientHeight;
+  ctx.clearRect(0,0,w,h);
+  ctx.fillStyle=C.paper; ctx.fillRect(0,0,w,h);
+
+  // grid
+  ctx.lineWidth=1;
+  ctx.strokeStyle=C.minor; ctx.beginPath();
+  for(let x=0;x<=SPAN+1e-9;x+=GRID){ ctx.moveTo(Math.round(X(x))+.5,Y(0)); ctx.lineTo(Math.round(X(x))+.5,Y(HMAX)); }
+  for(let y=0;y<=HMAX+1e-9;y+=GRID){ ctx.moveTo(X(0),Math.round(Y(y))+.5); ctx.lineTo(X(SPAN),Math.round(Y(y))+.5); }
+  ctx.stroke();
+  ctx.strokeStyle=C.major; ctx.beginPath();
+  for(let x=0;x<=SPAN+1e-9;x+=1){ ctx.moveTo(Math.round(X(x))+.5,Y(0)); ctx.lineTo(Math.round(X(x))+.5,Y(HMAX)); }
+  for(let y=0;y<=HMAX+1e-9;y+=1){ ctx.moveTo(X(0),Math.round(Y(y))+.5); ctx.lineTo(X(SPAN),Math.round(Y(y))+.5); }
+  ctx.stroke();
+
+  // height limit lines
+  ctx.save(); ctx.setLineDash([7,5]); ctx.lineWidth=1.3; ctx.strokeStyle=C.ink3;
+  for(const yl of [HMIN,HMAX]){ ctx.beginPath(); ctx.moveTo(X(-0.55),Y(yl)); ctx.lineTo(X(SPAN+0.55),Y(yl)); ctx.stroke(); }
+  ctx.restore();
+  ctx.font='500 11px "IBM Plex Mono",monospace'; ctx.fillStyle=C.ink3; ctx.textAlign="left"; ctx.textBaseline="bottom";
+  ctx.fillText("h max 6.00", X(SPAN+0.62)-4, Y(HMAX)-3);
+  ctx.textBaseline="top";
+  ctx.fillText("h min 2.00", X(SPAN+0.62)-4, Y(HMIN)+3);
+
+  // ruler
+  ctx.textAlign="center"; ctx.textBaseline="top"; ctx.fillStyle=C.ink3;
+  ctx.font='500 10.5px "IBM Plex Mono",monospace';
+  for(let x=0;x<=SPAN;x+=1) ctx.fillText(x.toFixed(0), X(x), Y(0)+9);
+  ctx.textAlign="right"; ctx.textBaseline="middle";
+  for(let y=1;y<=HMAX;y+=1) ctx.fillText(y.toFixed(0), X(0)-8, Y(y));
+
+  // ground line
+  ctx.strokeStyle=C.line; ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.moveTo(X(-0.55),Math.round(Y(0))+.5); ctx.lineTo(X(SPAN+0.55),Math.round(Y(0))+.5); ctx.stroke();
+
+  // node dots
+  ctx.fillStyle=C.major;
+  for(let x=0;x<=SPAN+1e-9;x+=GRID) for(let y=0;y<=HMAX+1e-9;y+=GRID){
+    ctx.beginPath(); ctx.arc(X(x),Y(y),1.1,0,6.2832); ctx.fill();
+  }
+
+  // members
+  const wpx=Math.max(3,B*S);
+  const F=result&&result.forces;
+  members.forEach((m,i)=>{
+    let col=C.balsa, edge=C.balsaE;
+    if(F){
+      const f=F[i];
+      if(f.util>=1){ col=C.dang; edge=C.dang; }
+      else if(f.f>1e-9){ col=C.ten; edge=C.ten; }
+      else if(f.f<-1e-9){ col=C.com; edge=C.com; }
+      else { col=C.ink3; edge=C.ink3; }
+    }
+    ctx.lineCap="round"; ctx.lineWidth=wpx;
+    ctx.strokeStyle=col;
+    ctx.globalAlpha = F ? Math.min(1,0.42+0.58*Math.min(1,F[i].util*1.6)) : 1;
+    ctx.beginPath(); ctx.moveTo(X(m.a.x),Y(m.a.y)); ctx.lineTo(X(m.b.x),Y(m.b.y)); ctx.stroke();
+    ctx.globalAlpha=1;
+    ctx.lineWidth=1; ctx.strokeStyle=edge;
+    ctx.beginPath(); ctx.moveTo(X(m.a.x),Y(m.a.y)); ctx.lineTo(X(m.b.x),Y(m.b.y)); ctx.stroke();
+    if(i===hoverMember){
+      ctx.lineWidth=wpx+4; ctx.strokeStyle=tool==="erase"?C.dang:C.acc; ctx.globalAlpha=.32;
+      ctx.beginPath(); ctx.moveTo(X(m.a.x),Y(m.a.y)); ctx.lineTo(X(m.b.x),Y(m.b.y)); ctx.stroke();
+      ctx.globalAlpha=1;
+    }
+  });
+
+  // joints
+  ctx.fillStyle=C.surf; ctx.strokeStyle=C.ink2; ctx.lineWidth=1.2;
+  const jn=new Set();
+  members.forEach(m=>{ jn.add(key(m.a.x,m.a.y)); jn.add(key(m.b.x,m.b.y)); });
+  jn.forEach(k=>{ const [x,y]=k.split(",").map(Number);
+    ctx.beginPath(); ctx.arc(X(x),Y(y),wpx*0.28,0,6.2832); ctx.fill(); ctx.stroke(); });
+
+  // force labels
+  if(F&&showForces&&members.length<=46){
+    ctx.font='500 10.5px "IBM Plex Mono",monospace'; ctx.textAlign="center"; ctx.textBaseline="middle";
+    members.forEach((m,i)=>{
+      const f=F[i]; if(Math.abs(f.f)<0.05) return;
+      const mx=(X(m.a.x)+X(m.b.x))/2, my=(Y(m.a.y)+Y(m.b.y))/2;
+      const t=Math.abs(f.f).toFixed(f.f>=100?0:1)+(f.f>0?" T":" C");
+      const tw=ctx.measureText(t).width;
+      ctx.globalAlpha=.92; ctx.fillStyle=C.surf;
+      ctx.beginPath();
+      if(ctx.roundRect) ctx.roundRect(mx-tw/2-3.5,my-7.5,tw+7,15,3); else ctx.rect(mx-tw/2-3.5,my-7.5,tw+7,15);
+      ctx.fill();
+      ctx.globalAlpha=1;
+      ctx.fillStyle = f.util>=1?C.dang : (f.f>0?C.ten:C.com);
+      ctx.fillText(t,mx,my+.5);
+    });
+  }
+
+  // supports
+  drawPin(X(0),Y(0),C);
+  drawRoller(X(SPAN),Y(0),C);
+
+  // load arrow
+  if(result&&result.loadPt){
+    const P=parseFloat(document.getElementById("load").value)||0;
+    const lx=X(result.loadPt.x), ly=Y(result.loadPt.y);
+    ctx.strokeStyle=C.acc; ctx.fillStyle=C.acc; ctx.lineWidth=2.4;
+    ctx.beginPath(); ctx.moveTo(lx,ly-Math.min(58,S*1.15)); ctx.lineTo(lx,ly-wpx*0.7); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(lx,ly-wpx*0.5); ctx.lineTo(lx-6,ly-wpx*0.5-11); ctx.lineTo(lx+6,ly-wpx*0.5-11); ctx.closePath(); ctx.fill();
+    ctx.font='600 12px "IBM Plex Mono",monospace'; ctx.textAlign="left"; ctx.textBaseline="bottom";
+    ctx.fillText(P.toFixed(P%1?1:0)+" lb", lx+9, ly-Math.min(58,S*1.15)+11);
+  }
+
+  // pending / drag preview
+  const from=dragFrom||pending;
+  const to=dragTo||hoverNode;
+  if(from){
+    ctx.save(); ctx.setLineDash([6,5]); ctx.lineWidth=2; ctx.strokeStyle=C.acc;
+    ctx.beginPath(); ctx.moveTo(X(from.x),Y(from.y));
+    if(to) ctx.lineTo(X(to.x),Y(to.y));
+    ctx.stroke(); ctx.restore();
+    ctx.fillStyle=C.acc; ctx.beginPath(); ctx.arc(X(from.x),Y(from.y),4.5,0,6.2832); ctx.fill();
+  }
+  if(hoverNode&&tool==="draw"){
+    ctx.strokeStyle=C.acc; ctx.lineWidth=1.8;
+    ctx.beginPath(); ctx.arc(X(hoverNode.x),Y(hoverNode.y),6,0,6.2832); ctx.stroke();
+    ctx.font='500 10.5px "IBM Plex Mono",monospace'; ctx.fillStyle=C.ink2;
+    ctx.textAlign="left"; ctx.textBaseline="bottom";
+    ctx.fillText(hoverNode.x.toFixed(2)+", "+hoverNode.y.toFixed(2), X(hoverNode.x)+9, Y(hoverNode.y)-7);
+  }
+}
+
+function drawPin(x,y,C){
+  const s=13;
+  ctx.fillStyle=C.ink2; ctx.strokeStyle=C.ink2; ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.moveTo(x,y+2); ctx.lineTo(x-s*0.72,y+s); ctx.lineTo(x+s*0.72,y+s); ctx.closePath();
+  ctx.globalAlpha=.16; ctx.fill(); ctx.globalAlpha=1; ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(x-s,y+s+1.5); ctx.lineTo(x+s,y+s+1.5); ctx.stroke();
+  hatch(x,y+s+1.5,s,C);
+}
+function drawRoller(x,y,C){
+  const s=13, r=4.2;
+  ctx.strokeStyle=C.ink2; ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.moveTo(x,y+2); ctx.lineTo(x-s*0.72,y+s-r*1.1); ctx.lineTo(x+s*0.72,y+s-r*1.1); ctx.closePath();
+  ctx.fillStyle=C.ink2; ctx.globalAlpha=.16; ctx.fill(); ctx.globalAlpha=1; ctx.stroke();
+  for(const dx of [-r*1.5,r*1.5]){ ctx.beginPath(); ctx.arc(x+dx,y+s-r*0.1,r,0,6.2832); ctx.stroke(); }
+  ctx.beginPath(); ctx.moveTo(x-s,y+s+r); ctx.lineTo(x+s,y+s+r); ctx.stroke();
+  hatch(x,y+s+r,s,C);
+}
+function hatch(x,y,s,C){
+  ctx.strokeStyle=C.ink3; ctx.lineWidth=1;
+  ctx.beginPath();
+  for(let i=-s;i<s;i+=5){ ctx.moveTo(x+i,y+6); ctx.lineTo(x+i+5,y+1); }
+  ctx.stroke();
+}
+
+/* ===================== pointer ===================== */
+function toModel(ev){
+  const r=cv.getBoundingClientRect();
+  return {x:(ev.clientX-r.left-OX)/S, y:(OY-(ev.clientY-r.top))/S};
+}
+function snapNode(p){
+  const x=r2(p.x), y=r2(p.y);
+  if(x<-1e-9||x>SPAN+1e-9||y<-1e-9||y>HMAX+1e-9) return null;
+  if(Math.hypot(p.x-x,p.y-y) > GRID*0.62) return null;
+  return {x,y};
+}
+function hitMember(p){
+  let best=-1,bd=0.16;
+  members.forEach((m,i)=>{
+    const vx=m.b.x-m.a.x, vy=m.b.y-m.a.y, L2=vx*vx+vy*vy;
+    let t=((p.x-m.a.x)*vx+(p.y-m.a.y)*vy)/L2; t=Math.max(0,Math.min(1,t));
+    const d=Math.hypot(p.x-(m.a.x+t*vx), p.y-(m.a.y+t*vy));
+    if(d<bd){ bd=d; best=i; }
+  });
+  return best;
+}
+
+let downNode=null, moved=false;
+cv.addEventListener("pointerdown",e=>{
+  cv.setPointerCapture(e.pointerId);
+  const p=toModel(e); moved=false;
+  if(tool==="erase"){ const i=hitMember(p); if(i>=0) removeMember(i); return; }
+  downNode=snapNode(p); dragFrom=downNode; dragTo=null; draw();
+});
+cv.addEventListener("pointermove",e=>{
+  const p=toModel(e);
+  const n=snapNode(p);
+  const hm=(tool==="erase"||!n)?hitMember(p):-1;
+  const changed=(JSON.stringify(n)!==JSON.stringify(hoverNode))||hm!==hoverMember;
+  hoverNode=n; hoverMember=hm;
+  if(dragFrom){ moved=true; dragTo=n; draw(); }
+  else if(changed) draw();
+});
+cv.addEventListener("pointerup",e=>{
+  const p=toModel(e); const n=snapNode(p);
+  if(tool==="draw"&&downNode){
+    if(n&&!(near(n.x,downNode.x)&&near(n.y,downNode.y))){
+      addMember(downNode,n); pending=null;
+    } else if(n&&!moved){
+      if(pending&&!(near(pending.x,n.x)&&near(pending.y,n.y))){ addMember(pending,n); pending=null; }
+      else pending = (pending&&near(pending.x,n.x)&&near(pending.y,n.y)) ? null : n;
+    }
+  }
+  downNode=null; dragFrom=null; dragTo=null; draw();
+});
+cv.addEventListener("pointerleave",()=>{ hoverNode=null; hoverMember=-1; draw(); });
+document.addEventListener("keydown",e=>{
+  if(e.key==="Escape"){ pending=null; draw(); }
+  if((e.key==="z"||e.key==="Z")&&(e.metaKey||e.ctrlKey)){ e.preventDefault(); undo(); }
+});
+
+/* ===================== UI ===================== */
+const $=id=>document.getElementById(id);
+function fmt(v,d){ return v.toLocaleString(undefined,{minimumFractionDigits:d,maximumFractionDigits:d}); }
+const SHORT={tension:"tens.",crushing:"crush",buckling:"buckle"};
+
+function run(){
+  const P=Math.max(0,parseFloat($("load").value)||0);
+  result=solve(P);
+  render(P);
+  draw();
+  try{ localStorage.setItem("truss.v1",JSON.stringify({m:members,p:$("load").value})); }catch(_){}
+}
+
+function render(P){
+  const R=result, ok=R.forces&&R.issues.every(i=>i.k!=="err");
+  const v=$("verdict");
+
+  if(!ok){
+    v.className="verdict idle";
+    $("verdict-t").textContent = members.length? "Not analyzable" : "Draw a truss";
+    $("verdict-s").textContent = members.length? "Resolve the checks below." : "Click two grid nodes to lay your first member.";
+    $("fos").textContent="—";
+    ["s-fail","s-ten","s-com","s-def","s-eff"].forEach(i=>$(i).textContent="—");
+  } else {
+    const holds=R.maxUtil<1;
+    v.className="verdict "+(holds?"ok":"bad");
+    $("verdict-t").textContent = holds? "Carries the load" : "Fails";
+    const c=R.forces[R.crit];
+    $("verdict-s").innerHTML = holds
+      ? `Member ${R.crit+1} is worked hardest at <b>${(R.maxUtil*100).toFixed(0)}%</b> of capacity (${c.mode}).`
+      : `Member ${R.crit+1} is at <b>${(R.maxUtil*100).toFixed(0)}%</b> of capacity — ${c.mode}.`;
+    $("fos").textContent = R.fos===Infinity? "∞" : fmt(R.fos,2);
+    $("s-fail").innerHTML = (R.failLoad===Infinity?"∞":fmt(R.failLoad,1))+'<small>lb</small>';
+    $("s-ten").innerHTML = fmt(R.maxT,1)+'<small>lb</small>';
+    $("s-com").innerHTML = fmt(Math.abs(R.maxC),1)+'<small>lb</small>';
+    $("s-def").innerHTML = fmt(R.defl,4)+'<small>in</small>';
+    $("s-eff").innerHTML = (R.failLoad===Infinity?"∞":fmt(R.failLoad/R.massLb/1000,1))+'<small>×10³</small>';
+  }
+  $("s-mass").innerHTML = fmt(R.massG,2)+'<small>g</small>';
+
+  const at=$("load-at");
+  at.textContent = R.loadPt ? `at (${R.loadPt.x.toFixed(2)}, ${R.loadPt.y.toFixed(2)}) in` : "at top chord, x = 6.00 in";
+
+  // checks
+  const ul=$("issues"); ul.innerHTML="";
+  const list=R.issues.slice();
+  if(ok){
+    list.push({t:`Height <b>${R.height.toFixed(2)} in</b> — inside the ${HMIN.toFixed(2)}–${HMAX.toFixed(2)} in range.`,k:"good"});
+    list.push({t:`<b>${members.length}</b> members, <b>${fmt(R.totalLen,2)} in</b> of 0.25 in stock.`,k:"good"});
+    const longC=R.forces.filter(f=>f.mode==="buckling").length;
+    if(longC) list.push({t:`<b>${longC}</b> compression member${longC>1?"s":""} fail${longC>1?"":"s"} by buckling before crushing. Shortening them, or bracing at midpoint, buys capacity fastest.`,k:"warn"});
+  }
+  if(!list.length) list.push({t:"All checks clear.",k:"good"});
+  for(const it of list){
+    const li=document.createElement("li");
+    li.className=it.k==="err"?"err":(it.k==="good"?"good":"");
+    const sp=document.createElement("span"); sp.innerHTML=it.t; li.appendChild(sp);
+    ul.appendChild(li);
+  }
+
+  // table
+  const tb=$("rows"); tb.innerHTML="";
+  $("tbl-empty").style.display = members.length? "none":"block";
+  members.forEach((m,i)=>{
+    const L=len(m), f=R.forces?R.forces[i]:null;
+    const tr=document.createElement("tr");
+    tr.dataset.i=i;
+    if(f){
+      const tag = f.f>1e-9?"T":(f.f<-1e-9?"C":"Z");
+      const pct=Math.min(100,f.util*100);
+      const cls = f.util>=1?"d":(f.util>=0.7?"w":"");
+      tr.innerHTML=`<td class="num">${i+1}</td><td class="num">${L.toFixed(2)}</td>
+        <td class="num">${fmt(Math.abs(f.f),1)}</td><td><span class="tag ${tag}">${tag==="Z"?"0":tag}</span></td>
+        <td class="num">${fmt(f.cap,1)}</td>
+        <td><span class="bar"><i class="${cls}" style="width:${pct.toFixed(1)}%"></i></span></td>
+        <td style="color:var(--ink-2)">${SHORT[f.mode]||"—"}</td>`;
+    } else {
+      tr.innerHTML=`<td class="num">${i+1}</td><td class="num">${L.toFixed(2)}</td>
+        <td class="num" colspan="5" style="text-align:left;color:var(--ink-3)">— not analyzed —</td>`;
+    }
+    tr.addEventListener("mouseenter",()=>{ hoverMember=i; draw(); });
+    tr.addEventListener("mouseleave",()=>{ hoverMember=-1; draw(); });
+    tb.appendChild(tr);
+  });
+}
+
+function undo(){ if(!history.length) return; members=JSON.parse(history.pop()); pending=null; run(); }
+
+$("btn-undo").onclick=undo;
+$("btn-clear").onclick=()=>{ snapshot(); members=[]; pending=null; run(); };
+$("btn-example").onclick=()=>{ snapshot(); members=normalize(EXAMPLE()); pending=null; run(); };
+$("tool-draw").onclick=()=>setTool("draw");
+$("tool-erase").onclick=()=>setTool("erase");
+function setTool(t){
+  tool=t; pending=null;
+  $("tool-draw").setAttribute("aria-pressed",String(t==="draw"));
+  $("tool-erase").setAttribute("aria-pressed",String(t==="erase"));
+  cv.style.cursor = t==="erase"?"pointer":"crosshair";
+  draw();
+}
+$("load").addEventListener("input",run);
+$("opt-forces").addEventListener("change",e=>{ showForces=e.target.checked; draw(); });
+
+function EXAMPLE(){
+  const B0=[[0,0],[3,0],[6,0],[9,0],[12,0]], T0=[[3,3],[6,3],[9,3]];
+  const P=(a,b)=>({a:{x:a[0],y:a[1]},b:{x:b[0],y:b[1]}});
+  return [
+    P(B0[0],B0[1]),P(B0[1],B0[2]),P(B0[2],B0[3]),P(B0[3],B0[4]),
+    P(T0[0],T0[1]),P(T0[1],T0[2]),
+    P(B0[0],T0[0]),P(B0[4],T0[2]),
+    P(B0[1],T0[0]),P(B0[2],T0[1]),P(B0[3],T0[2]),
+    P(B0[1],T0[1]),P(B0[3],T0[1])
+  ];
+}
+
+/* boot */
+let restored=false;
+try{
+  const s=JSON.parse(localStorage.getItem("truss.v1")||"null");
+  if(s&&Array.isArray(s.m)&&s.m.length){ members=normalize(s.m); if(s.p) $("load").value=s.p; restored=true; }
+}catch(_){}
+if(!restored) members=normalize(EXAMPLE());
+
+const mq=window.matchMedia("(prefers-color-scheme: dark)");
+mq.addEventListener?.("change",draw);
+new MutationObserver(draw).observe(document.documentElement,{attributes:true,attributeFilter:["data-theme"]});
+window.addEventListener("resize",resize);
+resize(); run();
+})();
+</script>
+
+</body></html>
