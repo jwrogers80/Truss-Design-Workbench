@@ -1,8 +1,19 @@
-<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1"><style>:root{color-scheme:light}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Draw a 12-inch balsa truss on a quarter-inch grid and get the axial force, capacity, and mass of every member.">
 <title>Balsa Truss Workbench</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@600;700&family=IBM+Plex+Sans:wght@400;500&display=swap">
+<style>
+html{color-scheme:light dark}
+body{margin:0}
+img{max-width:100%}
+[hidden]{display:none!important}
+</style>
 <style>
 :root{
   --paper:#EFF1EC; --surface:#FAFBF8; --surface-2:#E4E7DF; --surface-3:#DADFD4;
@@ -115,9 +126,9 @@ canvas{display:block;width:100%;height:auto;touch-action:none;cursor:crosshair}
 .verdict .big{font-family:"IBM Plex Sans Condensed",sans-serif;font-weight:700;font-size:21px;line-height:1.05}
 .verdict .sub{font-size:12.5px;color:var(--ink-2);margin-top:2px}
 .verdict.ok .big{color:var(--ok)} .verdict.bad .big{color:var(--danger)} .verdict.idle .big{color:var(--ink-2)}
-.fos{margin-left:auto;text-align:right;font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums}
+.fos{margin-left:auto;flex:none;text-align:right;font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums}
 .fos b{display:block;font-size:22px;font-weight:600;line-height:1}
-.fos span{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3)}
+.fos span{display:block;font-size:10px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3);white-space:nowrap;margin-top:3px}
 
 .stats{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line);border-top:1px solid var(--line);margin-top:14px}
 .stat{background:var(--surface);padding:10px 14px}
@@ -158,7 +169,8 @@ footer h3{font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:v
 footer p{margin:12px 0 0;max-width:78ch;color:var(--ink-3);font-size:12px}
 @media (prefers-reduced-motion:no-preference){.verdict,.bar i{transition:background-color .18s ease,width .25s ease}}
 </style>
-
+</head>
+<body>
 <header>
   <div class="brand">
     <h1>Balsa Truss Workbench</h1>
@@ -184,6 +196,7 @@ footer p{margin:12px 0 0;max-width:78ch;color:var(--ink-3);font-size:12px}
       <button class="act" id="btn-example" type="button">Load example</button>
       <div class="tb-right">
         <label class="chk"><input type="checkbox" id="opt-forces" checked> Force labels</label>
+        <button class="act" id="btn-theme" type="button" title="Switch between light and dark">Theme</button>
       </div>
     </div>
     <div class="canvas-wrap"><canvas id="cv" aria-label="Truss drafting grid"></canvas></div>
@@ -218,7 +231,7 @@ footer p{margin:12px 0 0;max-width:78ch;color:var(--ink-3);font-size:12px}
             <div class="big" id="verdict-t">Draw a truss</div>
             <div class="sub" id="verdict-s">Connect both supports to begin.</div>
           </div>
-          <div class="fos"><b id="fos">—</b><span>Factor of safety</span></div>
+          <div class="fos"><b id="fos">—</b><span>Safety factor</span></div>
         </div>
       </div>
       <dl class="stats" id="stats">
@@ -240,7 +253,7 @@ footer p{margin:12px 0 0;max-width:78ch;color:var(--ink-3);font-size:12px}
       <h2>Member forces</h2>
       <div class="tbl-scroll">
         <table>
-          <thead><tr><th>#</th><th class="num">L&nbsp;in</th><th class="num">Force&nbsp;lb</th><th></th><th class="num">Cap</th><th style="width:52px">Use</th><th>Mode</th></tr></thead>
+          <thead><tr><th>#</th><th class="num">L&nbsp;in</th><th class="num">Force&nbsp;lb</th><th class="num">Cap</th><th style="width:48px">Use</th><th>Limited&nbsp;by</th></tr></thead>
           <tbody id="rows"></tbody>
         </table>
       </div>
@@ -259,7 +272,7 @@ footer p{margin:12px 0 0;max-width:78ch;color:var(--ink-3);font-size:12px}
     <div><dt>Moment of inertia</dt><dd>3.255e-4 in⁴</dd></div>
     <div><dt>Modulus E</dt><dd>500,000 psi</dd></div>
     <div><dt>Tensile strength</dt><dd>2,000 psi</dd></div>
-    <div><dt>Crushing strength</dt><dd>1,000 psi</dd></div>
+    <div><dt>Compressive strength</dt><dd>1,000 psi</dd></div>
     <div><dt>Buckling</dt><dd>Euler, K = 1.0</dd></div>
     <div><dt>Density</dt><dd>8.0 lb/ft³</dd></div>
   </dl>
@@ -358,7 +371,7 @@ function len(m){ return Math.hypot(m.b.x-m.a.x, m.b.y-m.a.y); }
 
 function compCapacity(L){
   const buck=EULER/(L*L);
-  return buck<P_CRUSH ? {cap:buck,mode:"buckling"} : {cap:P_CRUSH,mode:"crushing"};
+  return buck<P_CRUSH ? {cap:buck,mode:"buckling"} : {cap:P_CRUSH,mode:"compression"};
 }
 
 function solve(P){
@@ -748,7 +761,6 @@ document.addEventListener("keydown",e=>{
 /* ===================== UI ===================== */
 const $=id=>document.getElementById(id);
 function fmt(v,d){ return v.toLocaleString(undefined,{minimumFractionDigits:d,maximumFractionDigits:d}); }
-const SHORT={tension:"tens.",crushing:"crush",buckling:"buckle"};
 
 function run(){
   const P=Math.max(0,parseFloat($("load").value)||0);
@@ -795,7 +807,7 @@ function render(P){
     list.push({t:`Height <b>${R.height.toFixed(2)} in</b> — inside the ${HMIN.toFixed(2)}–${HMAX.toFixed(2)} in range.`,k:"good"});
     list.push({t:`<b>${members.length}</b> members, <b>${fmt(R.totalLen,2)} in</b> of 0.25 in stock.`,k:"good"});
     const longC=R.forces.filter(f=>f.mode==="buckling").length;
-    if(longC) list.push({t:`<b>${longC}</b> compression member${longC>1?"s":""} fail${longC>1?"":"s"} by buckling before crushing. Shortening them, or bracing at midpoint, buys capacity fastest.`,k:"warn"});
+    if(longC) list.push({t:`<b>${longC}</b> member${longC>1?"s":""} buckle${longC>1?"":"s"} before reaching the compression limit. Shortening them, or bracing at midpoint, buys capacity fastest.`,k:"warn"});
   }
   if(!list.length) list.push({t:"All checks clear.",k:"good"});
   for(const it of list){
@@ -817,13 +829,13 @@ function render(P){
       const pct=Math.min(100,f.util*100);
       const cls = f.util>=1?"d":(f.util>=0.7?"w":"");
       tr.innerHTML=`<td class="num">${i+1}</td><td class="num">${L.toFixed(2)}</td>
-        <td class="num">${fmt(Math.abs(f.f),1)}</td><td><span class="tag ${tag}">${tag==="Z"?"0":tag}</span></td>
+        <td class="num">${fmt(Math.abs(f.f),1)}&nbsp;<span class="tag ${tag}">${tag==="Z"?"0":tag}</span></td>
         <td class="num">${fmt(f.cap,1)}</td>
         <td><span class="bar"><i class="${cls}" style="width:${pct.toFixed(1)}%"></i></span></td>
-        <td style="color:var(--ink-2)">${SHORT[f.mode]||"—"}</td>`;
+        <td style="color:var(--ink-2)">${f.mode}</td>`;
     } else {
       tr.innerHTML=`<td class="num">${i+1}</td><td class="num">${L.toFixed(2)}</td>
-        <td class="num" colspan="5" style="text-align:left;color:var(--ink-3)">— not analyzed —</td>`;
+        <td class="num" colspan="4" style="text-align:left;color:var(--ink-3)">— not analyzed —</td>`;
     }
     tr.addEventListener("mouseenter",()=>{ hoverMember=i; draw(); });
     tr.addEventListener("mouseleave",()=>{ hoverMember=-1; draw(); });
@@ -847,6 +859,14 @@ function setTool(t){
 }
 $("load").addEventListener("input",run);
 $("opt-forces").addEventListener("change",e=>{ showForces=e.target.checked; draw(); });
+$("btn-theme").onclick=()=>{
+  const root=document.documentElement;
+  const dark=root.getAttribute("data-theme")==="dark" ||
+    (!root.getAttribute("data-theme") && window.matchMedia("(prefers-color-scheme: dark)").matches);
+  root.setAttribute("data-theme", dark?"light":"dark");
+  try{ localStorage.setItem("truss.theme", dark?"light":"dark"); }catch(_){}
+};
+try{ const t=localStorage.getItem("truss.theme"); if(t) document.documentElement.setAttribute("data-theme",t); }catch(_){}
 
 function EXAMPLE(){
   const B0=[[0,0],[3,0],[6,0],[9,0],[12,0]], T0=[[3,3],[6,3],[9,3]];
@@ -875,5 +895,5 @@ window.addEventListener("resize",resize);
 resize(); run();
 })();
 </script>
-
-</body></html>
+</body>
+</html>
